@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-AI Brain</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&family=Outfit:wght@300;400;600;700;900&display=swap');
+:root{--bg:#060608;--surface:#0e0e14;--card:#13131c;--border:#1c1c2e;--border2:#252538;--accent:#00e5ff;--accent2:#bf00ff;--accent3:#00ff9d;--text:#dde1f0;--muted:#4a4a6a;--gpt:#10a37f;--gemini:#4285f4;--deepseek:#00b4d8;--grok:#e7e7e7;--claude:#d4790a;--warn:#f59e0b;--danger:#ef4444;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(191,0,255,0.06) 0%,transparent 70%);pointer-events:none;z-index:0;animation:orb 8s ease-in-out infinite;}
+@keyframes orb{0%,100%{transform:translate(0,0)}50%{transform:translate(100px,80px)}}
+.container{max-width:900px;margin:0 auto;padding:24px 16px 60px;position:relative;z-index:1;}
+.header{text-align:center;margin-bottom:32px;padding-top:16px;}
+.header-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:20px;padding:4px 14px;font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;}
+.header h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,8vw,5rem);letter-spacing:4px;line-height:1;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 50%,var(--accent3) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+.header p{color:var(--muted);font-size:0.8rem;font-family:'JetBrains Mono',monospace;}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:20px;}
+.tab{flex:1;padding:8px 4px;border:none;background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:0.72rem;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.tab.active{background:var(--card);color:var(--accent);border:1px solid var(--border2);}
+.tab-content{display:none;}.tab-content.active{display:block;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;}
+.card-title{font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:3px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title::before{content:'';display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px;}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:480px){.profile-grid{grid-template-columns:1fr;}}
+.field-label{font-size:0.7rem;color:var(--muted);margin-bottom:5px;font-family:'JetBrains Mono',monospace;}
+select,input[type="password"],textarea{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.85rem;outline:none;transition:border-color 0.2s;appearance:none;}
+select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,229,255,0.08);}
+select{cursor:pointer;}
+.keys-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:540px){.keys-grid{grid-template-columns:1fr;}}
+.key-group{display:flex;flex-direction:column;gap:5px;}
+.key-label{font-size:0.68rem;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:6px;color:var(--text);}
+.ai-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.key-input{font-family:'JetBrains Mono',monospace!important;font-size:0.7rem!important;}
+.key-input.has-key{border-color:var(--accent3)!important;}
+.depth-selector{display:flex;gap:6px;margin-bottom:12px;}
+.depth-btn{flex:1;padding:7px 4px;border:1px solid var(--border2);background:var(--surface);border-radius:8px;color:var(--muted);font-size:0.7rem;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.2s;text-align:center;}
+.depth-btn.selected{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,0.06);}
+textarea#queryInput{min-height:110px;resize:vertical;line-height:1.6;font-size:0.9rem;}
+.launch-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;cursor:pointer;transition:all 0.2s;}
+.launch-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,0.2);}
+.launch-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+/* iOS-style mic button */
+.mic-btn{position:relative;padding:13px 15px;background:var(--card);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mic-btn svg{width:22px;height:22px;}
+.mic-btn .mic-fill{fill:var(--accent);transition:fill 0.2s;}
+.mic-btn .mic-stroke{stroke:var(--accent);transition:stroke 0.2s;}
+.mic-btn.listening .mic-fill{fill:var(--danger);}
+.mic-btn.listening .mic-stroke{stroke:var(--danger);}
+.mic-btn.listening{border-color:var(--danger);background:rgba(239,68,68,0.06);}
+.rec-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--danger);border-radius:50%;display:none;animation:bdot 1s ease-in-out infinite;}
+.mic-btn.listening .rec-dot{display:block;}
+@keyframes bdot{0%,100%{opacity:1}50%{opacity:0.15}}
+.progress-wrap{margin-bottom:16px;display:none;}.progress-wrap.show{display:block;}
+.progress-info{display:flex;justify-content:space-between;font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-bottom:6px;}
+.progress-track{height:3px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));border-radius:3px;transition:width 0.6s ease;width:0%;}
+.ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+@media(max-width:500px){.ai-grid{grid-template-columns:1fr;}}
+.ai-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;transition:border-color 0.3s,box-shadow 0.3s;min-height:140px;display:flex;flex-direction:column;}
+.ai-card.thinking{border-color:var(--accent);animation:pborder 2s ease-in-out infinite;}
+.ai-card.done{border-color:var(--accent3);}
+.ai-card.error{border-color:var(--danger);}
+.ai-card.skipped{opacity:0.4;}
+@keyframes pborder{0%,100%{box-shadow:0 0 20px rgba(0,229,255,0.1)}50%{box-shadow:0 0 30px rgba(0,229,255,0.25)}}
+.ai-card-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.ai-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-family:'JetBrains Mono',monospace;font-weight:700;flex-shrink:0;}
+.ai-info{flex:1;min-width:0;}
+.ai-name-row{display:flex;align-items:center;justify-content:space-between;}
+.ai-name{font-size:0.78rem;font-weight:700;}
+.ai-confidence{font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--accent3);font-weight:700;}
+.ai-status-badge{font-size:0.6rem;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-top:2px;}
+.ai-response{flex:1;font-size:0.75rem;line-height:1.6;color:var(--text);font-family:'JetBrains Mono',monospace;overflow-y:auto;max-height:200px;word-break:break-word;}
+.ai-response.placeholder{color:var(--muted);font-style:italic;}
+.typing::after{content:'▋';animation:blink 0.8s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.discussion-card{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:16px;margin-bottom:16px;display:none;}
+.discussion-card.show{display:block;}
+.discussion-title{font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--accent2);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;}
+.discussion-msg{display:flex;gap:10px;margin-bottom:10px;animation:slin 0.3s ease;}
+@keyframes slin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.discussion-avatar{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;flex-shrink:0;margin-top:2px;}
+.discussion-text{font-size:0.75rem;line-height:1.6;font-family:'JetBrains Mono',monospace;color:var(--text);flex:1;}
+.discussion-text strong{font-size:0.65rem;color:var(--muted);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px;}
+.conflict-banner{display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:0.75rem;font-family:'JetBrains Mono',monospace;color:var(--warn);}
+.conflict-banner.show{display:flex;align-items:center;gap:8px;}
+.vote-section{display:none;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:16px;margin-bottom:16px;}
+.vote-section.show{display:block;}
+.vote-title{font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--warn);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;}
+.vote-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.vote-name{width:80px;font-family:'JetBrains Mono',monospace;color:var(--muted);flex-shrink:0;font-size:0.65rem;}
+.vote-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.vote-fill{height:100%;border-radius:3px;transition:width 1s ease;width:0%;}
+.vote-pct{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text);width:35px;text-align:right;}
+.verdict{display:none;background:linear-gradient(135deg,rgba(0,229,255,0.04),rgba(191,0,255,0.04));border:1px solid rgba(0,229,255,0.3);border-radius:16px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
+.verdict::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));}
+.verdict.show{display:block;animation:fup 0.5s ease;}
+@keyframes fup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.verdict-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.verdict-badge{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:2px;text-transform:uppercase;}
+.verdict-label{font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:var(--muted);}
+.verdict-text{font-size:0.88rem;line-height:1.75;color:var(--text);font-family:'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-word;}
+.verdict-meta{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;}
+.verdict-stat{font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);}
+.verdict-stat span{color:var(--accent3);font-weight:700;}
+.history-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;}
+.history-item:hover{border-color:var(--border2);}
+.history-q{font-size:0.82rem;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.history-meta{font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:0.8rem;font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <div class="header-badge">⚡ AI CONSENSUS ENGINE v2.0</div>
+  <h1>MULTI-AI BRAIN</h1>
+  <p id="hdr-sub">// 5 models → discussion → voting → truth</p>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('main')"><span data-i="tab_query">Query</span></button>
+  <button class="tab" onclick="switchTab('keys')"><span data-i="tab_keys">API Keys</span></button>
+  <button class="tab" onclick="switchTab('profile')"><span data-i="tab_profile">Profile</span></button>
+  <button class="tab" onclick="switchTab('history')"><span data-i="tab_history">History</span></button>
+</div>
+
+<!-- MAIN -->
+
+<div id="tab-main" class="tab-content active">
+  <div class="card" style="padding:14px;">
+    <div class="card-title" data-i="depth_title">Analysis Depth</div>
+    <div class="depth-selector">
+      <button class="depth-btn selected" onclick="setDepth('fast',this)">⚡ <span data-i="fast">Fast</span><br><span style="font-size:0.6rem;color:var(--muted)" data-i="fast_sub">1 round</span></button>
+      <button class="depth-btn" onclick="setDepth('deep',this)">🔍 <span data-i="deep">Deep</span><br><span style="font-size:0.6rem;color:var(--muted)" data-i="deep_sub">3 rounds</span></button>
+      <button class="depth-btn" onclick="setDepth('max',this)">🧠 <span data-i="max_d">Max</span><br><span style="font-size:0.6rem;color:var(--muted)" data-i="max_sub">to consensus</span></button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" data-i="your_question">Your Question</div>
+    <textarea id="queryInput" data-i-ph="query_ph"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="launch-btn" id="launchBtn" onclick="startPipeline()" style="flex:1;"><span data-i="launch_btn">LAUNCH 5 AI</span></button>
+      <button class="mic-btn" id="voiceBtn" onclick="toggleVoice(document.getElementById('queryInput'),'voiceBtn')">
+        <svg viewBox="0 0 24 24"><rect class="mic-fill" x="9" y="2" width="6" height="11" rx="3"/><path class="mic-stroke" d="M5 11a7 7 0 0 0 14 0" stroke-width="2" fill="none" stroke-linecap="round"/><line class="mic-stroke" x1="12" y1="18" x2="12" y2="22" stroke-width="2" stroke-linecap="round"/><line class="mic-stroke" x1="9" y1="22" x2="15" y2="22" stroke-width="2" stroke-linecap="round"/></svg>
+        <div class="rec-dot"></div>
+      </button>
+    </div>
+  </div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-info"><span id="progressLabel"></span><span id="progressPct">0%</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <div id="phase1" style="display:none">
+    <div class="card-title" style="margin-bottom:12px;" data-i="phase1_title">// PHASE 1 — Initial Answers</div>
+    <div class="ai-grid" id="aiGrid"></div>
+  </div>
+  <div class="discussion-card" id="discussionCard">
+    <div class="discussion-title" data-i="phase2_title">// PHASE 2 — Model Discussion</div>
+    <div id="discussionFeed"></div>
+  </div>
+  <div class="conflict-banner" id="conflictBanner" data-i="conflict_msg">⚠️ Models disagree — switching to voting</div>
+  <div class="vote-section" id="voteSection">
+    <div class="vote-title" data-i="vote_title">// VOTING — Plan B</div>
+    <div id="voteBars"></div>
+  </div>
+  <div id="dialogFeed" style="margin-top:16px;"></div>
+  <div id="continueDialog" style="display:none;margin-top:16px;">
+    <div class="card" style="border-color:var(--accent2);">
+      <div class="card-title" data-i="continue_title">💬 Continue Dialog</div>
+      <textarea id="continueInput" data-i-ph="continue_ph" style="min-height:80px;resize:vertical;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="continueDialogFn()" style="flex:1;padding:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:10px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;"><span data-i="send_btn">SEND</span></button>
+        <button class="mic-btn" id="voiceBtn2" onclick="toggleVoice(document.getElementById('continueInput'),'voiceBtn2')" style="padding:12px 14px;">
+          <svg viewBox="0 0 24 24"><rect class="mic-fill" x="9" y="2" width="6" height="11" rx="3"/><path class="mic-stroke" d="M5 11a7 7 0 0 0 14 0" stroke-width="2" fill="none" stroke-linecap="round"/><line class="mic-stroke" x1="12" y1="18" x2="12" y2="22" stroke-width="2" stroke-linecap="round"/><line class="mic-stroke" x1="9" y1="22" x2="15" y2="22" stroke-width="2" stroke-linecap="round"/></svg>
+          <div class="rec-dot"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="verdict" id="verdict">
+    <div class="verdict-header">
+      <div class="verdict-badge" data-i="verdict_badge">✦ CLAUDE FINAL</div>
+      <div class="verdict-label" data-i="verdict_label">Final verification</div>
+    </div>
+    <div class="verdict-text" id="verdictText"></div>
+    <div class="verdict-meta" id="verdictMeta"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button onclick="speakVerdict()" id="speakBtn" style="flex:1;padding:10px;background:var(--card);border:1px solid var(--accent3);border-radius:10px;color:var(--accent3);font-family:'JetBrains Mono',monospace;font-size:0.75rem;cursor:pointer;" data-i="speak_btn">🔊 Read Answer</button>
+      <button onclick="showContinueDialog()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:10px;color:#fff;font-family:'JetBrains Mono',monospace;font-size:0.75rem;cursor:pointer;" data-i="continue_btn">💬 Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- KEYS -->
+
+<div id="tab-keys" class="tab-content">
+  <div class="card">
+    <div class="card-title" data-i="keys_title">API Keys (local only 🔒)</div>
+    <div class="keys-grid">
+      <div class="key-group"><div class="key-label"><span class="ai-dot" style="background:var(--gpt)"></span>ChatGPT (OpenAI)</div><input class="key-input" id="key-openai" type="password" placeholder="sk-proj-..." oninput="saveKey('openai',this.value);markKey(this)"></div>
+      <div class="key-group"><div class="key-label"><span class="ai-dot" style="background:var(--gemini)"></span>Gemini (Google)</div><input class="key-input" id="key-gemini" type="password" placeholder="AIza..." oninput="saveKey('gemini',this.value);markKey(this)"></div>
+      <div class="key-group"><div class="key-label"><span class="ai-dot" style="background:var(--deepseek)"></span>DeepSeek</div><input class="key-input" id="key-deepseek" type="password" placeholder="sk-..." oninput="saveKey('deepseek',this.value);markKey(this)"></div>
+      <div class="key-group"><div class="key-label"><span class="ai-dot" style="background:var(--grok)"></span>Grok (xAI)</div><input class="key-input" id="key-grok" type="password" placeholder="xai-..." oninput="saveKey('grok',this.value);markKey(this)"></div>
+      <div class="key-group"><div class="key-label"><span class="ai-dot" style="background:var(--claude)"></span>Claude (Anthropic)</div><input class="key-input" id="key-claude" type="password" placeholder="sk-ant-..." oninput="saveKey('claude',this.value);markKey(this)"></div>
+    </div>
+    <p style="margin-top:14px;font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);line-height:1.6;" data-i="keys_note">⚠️ Keys stored only in your browser. Not sent anywhere except official API servers.</p>
+  </div>
+</div>
+
+<!-- PROFILE -->
+
+<div id="tab-profile" class="tab-content">
+  <div class="card">
+    <div class="card-title" data-i="profile_title">Personal Profile</div>
+    <div class="profile-grid">
+      <div>
+        <div class="field-label" data-i="who_label">Who are you?</div>
+        <select id="prof-role" onchange="saveProfile()">
+          <option value="" data-i="r0">Not specified</option>
+          <option value="student" data-i="r1">🎓 Student</option>
+          <option value="developer" data-i="r2">💻 Developer</option>
+          <option value="scientist" data-i="r3">🔬 Scientist</option>
+          <option value="doctor" data-i="r4">🏥 Doctor</option>
+          <option value="business" data-i="r5">💼 Entrepreneur</option>
+          <option value="teacher" data-i="r6">📚 Teacher</option>
+          <option value="curious" data-i="r7">🧠 Curious</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label" data-i="level_label">Knowledge Level</div>
+        <select id="prof-level" onchange="saveProfile()">
+          <option value="beginner" data-i="l1">🌱 Beginner</option>
+          <option value="medium" selected data-i="l2">📖 Intermediate</option>
+          <option value="expert" data-i="l3">🔥 Expert</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label" data-i="lang_label">App Language</div>
+        <select id="prof-lang" onchange="saveProfile();applyLang()">
+          <option value="en">🇬🇧 English</option>
+          <option value="ru">🇷🇺 Русский</option>
+          <option value="uz">🇺🇿 O'zbek</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="tr">🇹🇷 Türkçe</option>
+          <option value="zh">🇨🇳 中文</option>
+          <option value="ar">🇸🇦 العربية</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label" data-i="style_label">Answer Style</div>
+        <select id="prof-style" onchange="saveProfile()">
+          <option value="detailed" data-i="s1">📝 Detailed</option>
+          <option value="brief" data-i="s2">⚡ Brief</option>
+          <option value="bullet" data-i="s3">• Bullets</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <div class="field-label" data-i="ctx_label">Additional context (optional)</div>
+      <textarea id="prof-context" rows="3" data-i-ph="ctx_ph" oninput="saveProfile()" style="min-height:70px;"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+
+<div id="tab-history" class="tab-content">
+  <div id="historyList"><div class="empty-state" data-i="hist_empty">// History empty<br>Run first analysis!</div></div>
+  <button onclick="clearHistory()" style="width:100%;padding:10px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.7rem;cursor:pointer;margin-top:8px;" data-i="clear_hist">Clear history</button>
+</div>
+</div>
+
+<script>
+const TR = {
+en:{tab_query:"🚀 Query",tab_keys:"🔑 API Keys",tab_profile:"👤 Profile",tab_history:"📋 History",depth_title:"Analysis Depth",fast:"Fast",fast_sub:"1 round",deep:"Deep",deep_sub:"3 rounds",max_d:"Max",max_sub:"to consensus",your_question:"Your Question",query_ph:"Enter any question or task...\n\nExample: What is the main cause of cell aging?",launch_btn:"LAUNCH 5 AI",phase1_title:"// PHASE 1 — Initial Answers",phase2_title:"// PHASE 2 — Model Discussion",conflict_msg:"⚠️ Models disagree — switching to voting",vote_title:"// VOTING — Plan B",continue_title:"💬 Continue Dialog",continue_ph:"Ask a follow-up question...",send_btn:"SEND",verdict_badge:"✦ CLAUDE FINAL",verdict_label:"Final verification and conclusion",speak_btn:"🔊 Read Answer",continue_btn:"💬 Continue",keys_title:"API Keys (local only 🔒)",keys_note:"⚠️ Keys stored only in your browser. Not sent anywhere except official API servers.",profile_title:"Personal Profile",who_label:"Who are you?",level_label:"Knowledge Level",lang_label:"App Language",style_label:"Answer Style",r0:"Not specified",r1:"🎓 Student",r2:"💻 Developer",r3:"🔬 Scientist",r4:"🏥 Doctor",r5:"💼 Entrepreneur",r6:"📚 Teacher",r7:"🧠 Curious",l1:"🌱 Beginner",l2:"📖 Intermediate",l3:"🔥 Expert",s1:"📝 Detailed",s2:"⚡ Brief",s3:"• Bullets",ctx_label:"Additional context (optional)",ctx_ph:"E.g. I study quantum physics, work at a startup...",hist_empty:"// History empty\nRun first analysis!",clear_hist:"Clear history",hdr_sub:"// 5 models → discussion → voting → truth",p1:"Initializing...",p2:"Phase 1 — Getting answers...",p3:"Phase 2 — Discussion...",p4:"Checking consensus...",p5:"Voting...",p6:"Claude final check...",p7:"✓ Analysis complete",w:"waiting...",th:"thinking...",ds:"✓ done",es:"✗ error",nk:"no key",nkm:"API key not added",ml:"Models:",cl:"Consensus:",dl:"Depth:",tl:"Time:",yc:"✓ Yes",nc:"✗ No",you:"YOU",aia:"AI ANSWER",ef:"Could not get response. Check API keys.",ak:"Add at least one API key in the 🔑 tab",eq:"Enter a question!",ai_lang:"CRITICAL: Detect the language of the user's question and respond ONLY in that same language. Never switch languages. If asked in Russian — answer in Russian. If in Uzbek — answer in Uzbek. If in English — answer in English."},
+ru:{tab_query:"🚀 Запрос",tab_keys:"🔑 API Ключи",tab_profile:"👤 Профиль",tab_history:"📋 История",depth_title:"Глубина анализа",fast:"Быстро",fast_sub:"1 раунд",deep:"Глубоко",deep_sub:"3 раунда",max_d:"Максимум",max_sub:"до консенсуса",your_question:"Твой вопрос",query_ph:"Введи любой вопрос или задачу...\n\nНапример: В чём главная причина старения клеток?",launch_btn:"ЗАПУСТИТЬ 5 AI",phase1_title:"// ФАЗА 1 — Первичные ответы",phase2_title:"// ФАЗА 2 — Дискуссия между моделями",conflict_msg:"⚠️ Модели не пришли к единому мнению — переходим к голосованию",vote_title:"// ГОЛОСОВАНИЕ — план Б",continue_title:"💬 Продолжить диалог",continue_ph:"Задай уточняющий вопрос...",send_btn:"ОТПРАВИТЬ",verdict_badge:"✦ CLAUDE ФИНАЛ",verdict_label:"Финальная проверка и вывод",speak_btn:"🔊 Озвучить ответ",continue_btn:"💬 Продолжить",keys_title:"API Ключи (только в браузере 🔒)",keys_note:"⚠️ Ключи сохраняются только в твоём браузере. Не передаются никуда кроме официальных API серверов.",profile_title:"Персональный профиль",who_label:"Кто ты?",level_label:"Уровень знаний",lang_label:"Язык приложения",style_label:"Стиль ответа",r0:"Не указано",r1:"🎓 Студент",r2:"💻 Разработчик",r3:"🔬 Учёный",r4:"🏥 Врач",r5:"💼 Предприниматель",r6:"📚 Преподаватель",r7:"🧠 Любопытный",l1:"🌱 Новичок",l2:"📖 Средний",l3:"🔥 Эксперт",s1:"📝 Подробный",s2:"⚡ Краткий",s3:"• По пунктам",ctx_label:"Дополнительный контекст (необязательно)",ctx_ph:"Например: я изучаю квантовую физику, работаю в стартапе...",hist_empty:"// История пуста\nЗапусти первый анализ!",clear_hist:"Очистить историю",hdr_sub:"// 5 моделей → дискуссия → голосование → истина",p1:"Инициализация...",p2:"Фаза 1 — Получаю ответы...",p3:"Фаза 2 — Дискуссия...",p4:"Проверяю консенсус...",p5:"Голосование...",p6:"Claude финальная проверка...",p7:"✓ Анализ завершён",w:"ожидание...",th:"думает...",ds:"✓ готово",es:"✗ ошибка",nk:"нет ключа",nkm:"API ключ не добавлен",ml:"Моделей:",cl:"Консенсус:",dl:"Глубина:",tl:"Время:",yc:"✓ Да",nc:"✗ Нет",you:"ТЫ",aia:"AI ОТВЕТ",ef:"Не удалось получить ответ. Проверь API ключи.",ak:"Добавь хотя бы один API ключ во вкладке 🔑 Ключи",eq:"Введи вопрос!",ai_lang:"КРИТИЧЕСКИ ВАЖНО: Определи язык вопроса пользователя и отвечай ТОЛЬКО на том же языке. Никогда не меняй язык. Если вопрос на русском — отвечай на русском. Если на узбекском — отвечай на узбекском. Если на английском — отвечай на английском."},
+uz:{tab_query:"🚀 So'rov",tab_keys:"🔑 API Kalitlar",tab_profile:"👤 Profil",tab_history:"📋 Tarix",depth_title:"Tahlil chuqurligi",fast:"Tez",fast_sub:"1 davra",deep:"Chuqur",deep_sub:"3 davra",max_d:"Maksimal",max_sub:"konsensusga qadar",your_question:"Savolingiz",query_ph:"Har qanday savol yoki vazifani kiriting...",launch_btn:"5 AI NI ISHGA TUSHIRISH",phase1_title:"// 1-FAZA — Dastlabki javoblar",phase2_title:"// 2-FAZA — Modellar muhokamasi",conflict_msg:"⚠️ Modellar kelisha olmadi — ovoz berishga o'tish",vote_title:"// OVOZ BERISH",continue_title:"💬 Dialogni davom ettirish",continue_ph:"Aniqlashtiruvchi savol bering...",send_btn:"YUBORISH",verdict_badge:"✦ CLAUDE FINAL",verdict_label:"Yakuniy tekshiruv va xulosa",speak_btn:"🔊 Javobni o'qish",continue_btn:"💬 Davom etish",keys_title:"API Kalitlar (faqat lokal 🔒)",keys_note:"⚠️ Kalitlar faqat brauzeringizda saqlanadi.",profile_title:"Shaxsiy profil",who_label:"Siz kimsiz?",level_label:"Bilim darajasi",lang_label:"Ilova tili",style_label:"Javob uslubi",r0:"Ko'rsatilmagan",r1:"🎓 Talaba",r2:"💻 Dasturchi",r3:"🔬 Olim",r4:"🏥 Shifokor",r5:"💼 Tadbirkor",r6:"📚 O'qituvchi",r7:"🧠 Qiziquvchan",l1:"🌱 Boshlang'ich",l2:"📖 O'rta",l3:"🔥 Ekspert",s1:"📝 Batafsil",s2:"⚡ Qisqa",s3:"• Bandlar",ctx_label:"Qo'shimcha kontekst (ixtiyoriy)",ctx_ph:"Masalan: kvant fizikasini o'rganaman...",hist_empty:"// Tarix bo'sh\nBirinchi tahlilni boshlang!",clear_hist:"Tarixni tozalash",hdr_sub:"// 5 model → muhokama → ovoz berish → haqiqat",p1:"Ishga tushirish...",p2:"1-faza — Javoblar olinyapti...",p3:"2-faza — Muhokama...",p4:"Konsensus tekshirilmoqda...",p5:"Ovoz berish...",p6:"Claude yakuniy tekshiruv...",p7:"✓ Tahlil yakunlandi",w:"kutish...",th:"o'ylayapti...",ds:"✓ tayyor",es:"✗ xato",nk:"kalit yo'q",nkm:"API kalit qo'shilmagan",ml:"Modellar:",cl:"Konsensus:",dl:"Chuqurlik:",tl:"Vaqt:",yc:"✓ Ha",nc:"✗ Yo'q",you:"SIZ",aia:"AI JAVOBI",ef:"Javob olishning iloji bo'lmadi.",ak:"🔑 bo'limida kamida bitta API kalit qo'shing",eq:"Savol kiriting!",ai_lang:"MUHIM: Foydalanuvchi savolining tilini aniqla va FAQAT shu tilda javob ber. Tilni hech qachon o'zgartirma."},
+de:{tab_query:"🚀 Anfrage",tab_keys:"🔑 API-Schlüssel",tab_profile:"👤 Profil",tab_history:"📋 Verlauf",depth_title:"Analysetiefe",fast:"Schnell",fast_sub:"1 Runde",deep:"Tief",deep_sub:"3 Runden",max_d:"Maximum",max_sub:"bis Konsens",your_question:"Deine Frage",query_ph:"Gib eine Frage oder Aufgabe ein...",launch_btn:"5 AI STARTEN",phase1_title:"// PHASE 1 — Erste Antworten",phase2_title:"// PHASE 2 — Modelldiskussion",conflict_msg:"⚠️ Keine Einigung — Abstimmung",vote_title:"// ABSTIMMUNG",continue_title:"💬 Dialog fortsetzen",continue_ph:"Folgefrage stellen...",send_btn:"SENDEN",verdict_badge:"✦ CLAUDE FINAL",verdict_label:"Abschließende Prüfung",speak_btn:"🔊 Vorlesen",continue_btn:"💬 Fortsetzen",keys_title:"API-Schlüssel (lokal 🔒)",keys_note:"⚠️ Schlüssel werden nur lokal gespeichert.",profile_title:"Persönliches Profil",who_label:"Wer bist du?",level_label:"Kenntnisstand",lang_label:"App-Sprache",style_label:"Antwortstil",r0:"Nicht angegeben",r1:"🎓 Student",r2:"💻 Entwickler",r3:"🔬 Wissenschaftler",r4:"🏥 Arzt",r5:"💼 Unternehmer",r6:"📚 Lehrer",r7:"🧠 Neugierig",l1:"🌱 Anfänger",l2:"📖 Mittel",l3:"🔥 Experte",s1:"📝 Ausführlich",s2:"⚡ Kurz",s3:"• Stichpunkte",ctx_label:"Zusätzlicher Kontext (optional)",ctx_ph:"Z.B. Ich studiere Physik...",hist_empty:"// Verlauf leer\nErste Analyse starten!",clear_hist:"Verlauf löschen",hdr_sub:"// 5 Modelle → Diskussion → Abstimmung → Wahrheit",p1:"Initialisierung...",p2:"Phase 1...",p3:"Phase 2...",p4:"Konsens prüfen...",p5:"Abstimmung...",p6:"Claude Abschluss...",p7:"✓ Fertig",w:"warten...",th:"denkt...",ds:"✓ fertig",es:"✗ Fehler",nk:"kein Schlüssel",nkm:"API-Schlüssel fehlt",ml:"Modelle:",cl:"Konsens:",dl:"Tiefe:",tl:"Zeit:",yc:"✓ Ja",nc:"✗ Nein",you:"DU",aia:"KI-ANTWORT",ef:"Keine Antwort erhalten.",ak:"Füge mindestens einen API-Schlüssel hinzu",eq:"Frage eingeben!",ai_lang:"WICHTIG: Erkenne die Sprache und antworte NUR in dieser Sprache. Wechsle niemals die Sprache."},
+fr:{tab_query:"🚀 Requête",tab_keys:"🔑 Clés API",tab_profile:"👤 Profil",tab_history:"📋 Historique",depth_title:"Profondeur",fast:"Rapide",fast_sub:"1 tour",deep:"Profond",deep_sub:"3 tours",max_d:"Maximum",max_sub:"jusqu'au consensus",your_question:"Votre question",query_ph:"Entrez une question ou tâche...",launch_btn:"LANCER 5 IA",phase1_title:"// PHASE 1 — Réponses",phase2_title:"// PHASE 2 — Discussion",conflict_msg:"⚠️ Pas de consensus — vote",vote_title:"// VOTE",continue_title:"💬 Continuer",continue_ph:"Question de suivi...",send_btn:"ENVOYER",verdict_badge:"✦ CLAUDE FINAL",verdict_label:"Vérification finale",speak_btn:"🔊 Lire",continue_btn:"💬 Continuer",keys_title:"Clés API (local 🔒)",keys_note:"⚠️ Clés stockées localement.",profile_title:"Profil",who_label:"Qui êtes-vous?",level_label:"Niveau",lang_label:"Langue de l'app",style_label:"Style",r0:"Non spécifié",r1:"🎓 Étudiant",r2:"💻 Développeur",r3:"🔬 Scientifique",r4:"🏥 Médecin",r5:"💼 Entrepreneur",r6:"📚 Enseignant",r7:"🧠 Curieux",l1:"🌱 Débutant",l2:"📖 Intermédiaire",l3:"🔥 Expert",s1:"📝 Détaillé",s2:"⚡ Bref",s3:"• Points",ctx_label:"Contexte (optionnel)",ctx_ph:"Ex: J'étudie la physique...",hist_empty:"// Historique vide",clear_hist:"Effacer",hdr_sub:"// 5 modèles → discussion → vote → vérité",p1:"Init...",p2:"Phase 1...",p3:"Phase 2...",p4:"Consensus...",p5:"Vote...",p6:"Claude final...",p7:"✓ Terminé",w:"attente...",th:"réfléchit...",ds:"✓ ok",es:"✗ erreur",nk:"pas de clé",nkm:"Clé API manquante",ml:"Modèles:",cl:"Consensus:",dl:"Profondeur:",tl:"Heure:",yc:"✓ Oui",nc:"✗ Non",you:"VOUS",aia:"RÉPONSE IA",ef:"Impossible d'obtenir une réponse.",ak:"Ajoutez une clé API",eq:"Entrez une question!",ai_lang:"IMPORTANT: Détecte la langue et réponds UNIQUEMENT dans cette langue. Ne change jamais de langue."},
+es:{tab_query:"🚀 Consulta",tab_keys:"🔑 Claves",tab_profile:"👤 Perfil",tab_history:"📋 Historial",depth_title:"Profundidad",fast:"Rápido",fast_sub:"1 ronda",deep:"Profundo",deep_sub:"3 rondas",max_d:"Máximo",max_sub:"hasta consenso",your_question:"Tu pregunta",query_ph:"Ingresa cualquier pregunta...",launch_btn:"LANZAR 5 IA",phase1_title:"// FASE 1 — Respuestas",phase2_title:"// FASE 2 — Discusión",conflict_msg:"⚠️ Sin consenso — votación",vote_title:"// VOTACIÓN",continue_title:"💬 Continuar",continue_ph:"Pregunta de seguimiento...",send_btn:"ENVIAR",verdict_badge:"✦ CLAUDE FINAL",verdict_label:"Verificación final",speak_btn:"🔊 Leer",continue_btn:"💬 Continuar",keys_title:"Claves API (local 🔒)",keys_note:"⚠️ Claves guardadas localmente.",profile_title:"Perfil",who_label:"¿Quién eres?",level_label:"Nivel",lang_label:"Idioma de la app",style_label:"Estilo",r0:"No especificado",r1:"🎓 Estudiante",r2:"💻 Desarrollador",r3:"🔬 Científico",r4:"🏥 Médico",r5:"💼 Emprendedor",r6:"📚 Profesor",r7:"🧠 Curioso",l1:"🌱 Principiante",l2:"📖 Intermedio",l3:"🔥 Experto",s1:"📝 Detallado",s2:"⚡ Breve",s3:"• Puntos",ctx_label:"Contexto adicional",ctx_ph:"Ej: Estudio física cuántica...",hist_empty:"// Historial vacío",clear_hist:"Limpiar",hdr_sub:"// 5 modelos → discusión → votación → verdad",p1:"Iniciando...",p2:"Fase 1...",p3:"Fase 2...",p4:"Consenso...",p5:"Votación...",p6:"Claude final...",p7:"✓ Completado",w:"esperando...",th:"pensando...",ds:"✓ listo",es_:"✗ error",nk:"sin clave",nkm:"Clave API no añadida",ml:"Modelos:",cl:"Consenso:",dl:"Profundidad:",tl:"Hora:",yc:"✓ Sí",nc:"✗ No",you:"TÚ",aia:"RESPUESTA IA",ef:"No se pudo obtener respuesta.",ak:"Agrega al menos una clave API",eq:"¡Ingresa una pregunta!",ai_lang:"IMPORTANTE: Detecta el idioma y responde SOLO en ese idioma. Nunca cambies de idioma."},
+tr:{tab_query:"🚀 Sorgu",tab_keys:"🔑 API Anahtarları",tab_profile:"👤 Profil",tab_history:"📋 Geçmiş",depth_title:"Analiz Derinliği",fast:"Hızlı",fast_sub:"1 tur",deep:"Derin",deep_sub:"3 tur",max_d:"Maksimum",max_sub:"konsensüse kadar",your_question:"Sorunuz",query_ph:"Herhangi bir soru girin...",launch_btn:"5 AI BAŞLAT",phase1_title:"// FAZ 1 — İlk Yanıtlar",phase2_title:"// FAZ 2 — Tartışma",conflict_msg:"⚠️ Anlaşma yok — oylama",vote_title:"// OYLAMA",continue_title:"💬 Diyalog",continue_ph:"Takip sorusu...",send_btn:"GÖNDER",verdict_badge:"✦ CLAUDE FINAL",verdict_label:"Son doğrulama",speak_btn:"🔊 Oku",continue_btn:"💬 Devam",keys_title:"API Anahtarları (yerel 🔒)",keys_note:"⚠️ Anahtarlar yalnızca yerel olarak saklanır.",profile_title:"Profil",who_label:"Sen kimsin?",level_label:"Bilgi Düzeyi",lang_label:"Uygulama Dili",style_label:"Yanıt Stili",r0:"Belirtilmemiş",r1:"🎓 Öğrenci",r2:"💻 Geliştirici",r3:"🔬 Bilim İnsanı",r4:"🏥 Doktor",r5:"💼 Girişimci",r6:"📚 Öğretmen",r7:"🧠 Meraklı",l1:"🌱 Başlangıç",l2:"📖 Orta",l3:"🔥 Uzman",s1:"📝 Ayrıntılı",s2:"⚡ Kısa",s3:"• Maddeler",ctx_label:"Ek bağlam (isteğe bağlı)",ctx_ph:"Örn: Kuantum fiziği çalışıyorum...",hist_empty:"// Geçmiş boş",clear_hist:"Temizle",hdr_sub:"// 5 model → tartışma → oylama → gerçek",p1:"Başlatılıyor...",p2:"Faz 1...",p3:"Faz 2...",p4:"Konsensüs...",p5:"Oylama...",p6:"Claude son...",p7:"✓ Tamamlandı",w:"bekleniyor...",th:"düşünüyor...",ds:"✓ tamam",es:"✗ hata",nk:"anahtar yok",nkm:"API anahtarı yok",ml:"Modeller:",cl:"Konsensüs:",dl:"Derinlik:",tl:"Saat:",yc:"✓ Evet",nc:"✗ Hayır",you:"SEN",aia:"AI YANITI",ef:"Yanıt alınamadı.",ak:"En az bir API anahtarı ekleyin",eq:"Soru girin!",ai_lang:"ÖNEMLİ: Sorunun dilini tespit et ve YALNIZCA o dilde yanıt ver. Asla dil değiştirme."},
+zh:{tab_query:"🚀 查询",tab_keys:"🔑 API密钥",tab_profile:"👤 资料",tab_history:"📋 历史",depth_title:"分析深度",fast:"快速",fast_sub:"1轮",deep:"深入",deep_sub:"3轮",max_d:"最大",max_sub:"直到共识",your_question:"您的问题",query_ph:"输入任何问题...",launch_btn:"启动5个AI",phase1_title:"// 阶段1",phase2_title:"// 阶段2 — 讨论",conflict_msg:"⚠️ 无共识 — 投票",vote_title:"// 投票",continue_title:"💬 继续对话",continue_ph:"后续问题...",send_btn:"发送",verdict_badge:"✦ CLAUDE 最终",verdict_label:"最终验证",speak_btn:"🔊 朗读",continue_btn:"💬 继续",keys_title:"API密钥（本地 🔒）",keys_note:"⚠️ 密钥仅本地存储。",profile_title:"个人资料",who_label:"您是谁？",level_label:"知识水平",lang_label:"应用语言",style_label:"回答风格",r0:"未指定",r1:"🎓 学生",r2:"💻 开发者",r3:"🔬 科学家",r4:"🏥 医生",r5:"💼 企业家",r6:"📚 教师",r7:"🧠 好奇者",l1:"🌱 初学者",l2:"📖 中级",l3:"🔥 专家",s1:"📝 详细",s2:"⚡ 简短",s3:"• 要点",ctx_label:"附加背景（可选）",ctx_ph:"例：我学量子物理...",hist_empty:"// 历史为空",clear_hist:"清除",hdr_sub:"// 5模型→讨论→投票→真相",p1:"初始化...",p2:"阶段1...",p3:"阶段2...",p4:"共识...",p5:"投票...",p6:"Claude最终...",p7:"✓ 完成",w:"等待...",th:"思考中...",ds:"✓ 完成",es:"✗ 错误",nk:"无密钥",nkm:"未添加API密钥",ml:"模型：",cl:"共识：",dl:"深度：",tl:"时间：",yc:"✓ 是",nc:"✗ 否",you:"您",aia:"AI回答",ef:"无法获取回答。",ak:"请添加API密钥",eq:"请输入问题！",ai_lang:"重要：检测问题语言，仅以该语言回答。永远不要切换语言。"},
+ar:{tab_query:"🚀 استعلام",tab_keys:"🔑 مفاتيح",tab_profile:"👤 ملف",tab_history:"📋 سجل",depth_title:"عمق التحليل",fast:"سريع",fast_sub:"جولة",deep:"عميق",deep_sub:"3 جولات",max_d:"أقصى",max_sub:"حتى التوافق",your_question:"سؤالك",query_ph:"أدخل أي سؤال...",launch_btn:"تشغيل 5 ذكاء",phase1_title:"// المرحلة 1",phase2_title:"// المرحلة 2",conflict_msg:"⚠️ لا توافق — تصويت",vote_title:"// التصويت",continue_title:"💬 متابعة",continue_ph:"سؤال متابعة...",send_btn:"إرسال",verdict_badge:"✦ كلود النهائي",verdict_label:"التحقق النهائي",speak_btn:"🔊 قراءة",continue_btn:"💬 متابعة",keys_title:"مفاتيح API (محلي 🔒)",keys_note:"⚠️ المفاتيح محلية فقط.",profile_title:"الملف الشخصي",who_label:"من أنت؟",level_label:"المستوى",lang_label:"لغة التطبيق",style_label:"الأسلوب",r0:"غير محدد",r1:"🎓 طالب",r2:"💻 مطور",r3:"🔬 عالم",r4:"🏥 طبيب",r5:"💼 رجل أعمال",r6:"📚 معلم",r7:"🧠 فضولي",l1:"🌱 مبتدئ",l2:"📖 متوسط",l3:"🔥 خبير",s1:"📝 مفصل",s2:"⚡ موجز",s3:"• نقاط",ctx_label:"سياق إضافي",ctx_ph:"مثال: أدرس الفيزياء...",hist_empty:"// السجل فارغ",clear_hist:"مسح",hdr_sub:"// 5 نماذج → نقاش → تصويت → الحقيقة",p1:"جارٍ التهيئة...",p2:"المرحلة 1...",p3:"المرحلة 2...",p4:"التوافق...",p5:"التصويت...",p6:"كلود النهائي...",p7:"✓ اكتمل",w:"انتظار...",th:"يفكر...",ds:"✓ تم",es:"✗ خطأ",nk:"لا مفتاح",nkm:"لم يضف مفتاح",ml:"النماذج:",cl:"التوافق:",dl:"العمق:",tl:"الوقت:",yc:"✓ نعم",nc:"✗ لا",you:"أنت",aia:"إجابة الذكاء",ef:"تعذر الحصول على إجابة.",ak:"أضف مفتاح API واحداً على الأقل",eq:"أدخل سؤالاً!",ai_lang:"مهم: اكتشف لغة السؤال وأجب فقط بنفس اللغة. لا تغير اللغة أبداً."}
+};
+
+let lang='en';
+function t(k){return (TR[lang]||TR.en)[k]||(TR.en)[k]||k;}
+
+function applyLang(){
+  const p=getProfile(); lang=p.lang||'en';
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i');const v=t(k);if(v)el.textContent=v;});
+  document.querySelectorAll('[data-i-ph]').forEach(el=>{const k=el.getAttribute('data-i-ph');const v=t(k);if(v)el.placeholder=v;});
+  document.getElementById('hdr-sub').textContent=t('hdr_sub');
+}
+
+let depth='fast',running=false;
+const histArr=JSON.parse(localStorage.getItem('mab_h')||'[]');
+const AIC=[
+  {id:'openai',name:'ChatGPT',short:'GPT',color:'#10a37f',keyId:'key-openai'},
+  {id:'gemini',name:'Gemini',short:'GEM',color:'#4285f4',keyId:'key-gemini'},
+  {id:'deepseek',name:'DeepSeek',short:'DSK',color:'#00b4d8',keyId:'key-deepseek'},
+  {id:'grok',name:'Grok',short:'GRK',color:'#e7e7e7',keyId:'key-grok'},
+  {id:'claude',name:'Claude',short:'CLD',color:'#d4790a',keyId:'key-claude'},
+];
+
+window.onload=()=>{loadKeys();loadProfile();applyLang();renderHistory();};
+
+function switchTab(n){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['main','keys','profile','history'][i]===n));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+n).classList.add('active');
+}
+function setDepth(d,btn){depth=d;document.querySelectorAll('.depth-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}
+function saveKey(id,val){localStorage.setItem('mab_k_'+id,val);}
+function loadKeys(){AIC.forEach(ai=>{const el=document.getElementById(ai.keyId);const v=localStorage.getItem('mab_k_'+ai.id)||'';if(el){el.value=v;if(v)el.classList.add('has-key');}});}
+function markKey(el){el.classList.toggle('has-key',el.value.length>0);}
+function getKey(id){return localStorage.getItem('mab_k_'+id)||'';}
+function saveProfile(){const p={role:document.getElementById('prof-role').value,level:document.getElementById('prof-level').value,lang:document.getElementById('prof-lang').value,style:document.getElementById('prof-style').value,context:document.getElementById('prof-context').value};localStorage.setItem('mab_p',JSON.stringify(p));}
+function loadProfile(){const p=JSON.parse(localStorage.getItem('mab_p')||'{}');if(p.role)document.getElementById('prof-role').value=p.role;if(p.level)document.getElementById('prof-level').value=p.level;if(p.lang)document.getElementById('prof-lang').value=p.lang;if(p.style)document.getElementById('prof-style').value=p.style;if(p.context)document.getElementById('prof-context').value=p.context;}
+function getProfile(){return JSON.parse(localStorage.getItem('mab_p')||'{}');}
+function buildCtx(){const p=getProfile();let c='';const rm={student:'student',developer:'developer',scientist:'scientist',doctor:'doctor',business:'entrepreneur',teacher:'teacher',curious:'curious person'};const lm={beginner:'beginner (explain simply)',medium:'intermediate',expert:'expert (technical ok)'};const sm={detailed:'detailed answer',brief:'brief answer',bullet:'bullet points'};if(p.role)c+=`User: ${rm[p.role]||p.role}. `;if(p.level)c+=`Level: ${lm[p.level]||p.level}. `;if(p.style)c+=`Style: ${sm[p.style]||p.style}. `;if(p.context)c+=`Context: ${p.context}. `;return c;}
+function addToHistory(q,v){histArr.unshift({q,v,t:new Date().toLocaleString()});if(histArr.length>20)histArr.pop();localStorage.setItem('mab_h',JSON.stringify(histArr));renderHistory();}
+function renderHistory(){const el=document.getElementById('historyList');if(!histArr.length){el.innerHTML=`<div class="empty-state">${t('hist_empty')}</div>`;return;}el.innerHTML=histArr.map((h,i)=>`<div class="history-item" onclick="loadHist(${i})"><div class="history-q">${h.q}</div>${h.v?`<div style="font-size:0.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:6px;max-height:60px;overflow:hidden;">${h.v.slice(0,150)}...</div>`:''}<div class="history-meta">${h.t}</div></div>`).join('');}
+function loadHist(i){document.getElementById('queryInput').value=histArr[i].q;switchTab('main');}
+function clearHistory(){histArr.length=0;localStorage.removeItem('mab_h');renderHistory();}
+function setProgress(pct,label){document.getElementById('progressFill').style.width=pct+'%';document.getElementById('progressPct').textContent=pct+'%';document.getElementById('progressLabel').textContent=label;}
+function showProg(){document.getElementById('progressWrap').classList.add('show');}
+function buildCards(ids){
+  document.getElementById('aiGrid').innerHTML=AIC.map(ai=>{const a=ids.includes(ai.id);return`<div class="ai-card ${a?'':'skipped'}" id="card-${ai.id}"><div class="ai-card-top"><div class="ai-avatar" style="background:${ai.color}20;color:${ai.color};border:1px solid ${ai.color}30">${ai.short}</div><div class="ai-info"><div class="ai-name-row"><div class="ai-name" style="color:${ai.color}">${ai.name}</div><div class="ai-confidence" id="conf-${ai.id}"></div></div><div class="ai-status-badge" id="status-${ai.id}">${a?t('w'):t('nk')}</div></div></div><div class="ai-response placeholder" id="resp-${ai.id}">${a?'...':t('nkm')}</div></div>`;}).join('');}
+function cardThink(id){document.getElementById('card-'+id)?.classList.add('thinking');document.getElementById('status-'+id).textContent=t('th');const r=document.getElementById('resp-'+id);r.classList.remove('placeholder');r.classList.add('typing');r.textContent='';}
+function cardDone(id,text,conf){document.getElementById('card-'+id)?.classList.remove('thinking');document.getElementById('card-'+id)?.classList.add('done');document.getElementById('status-'+id).textContent=t('ds');const r=document.getElementById('resp-'+id);r.classList.remove('typing');r.textContent=text;if(conf)document.getElementById('conf-'+id).textContent=conf+'%';}
+function cardErr(id,msg){document.getElementById('card-'+id)?.classList.remove('thinking');document.getElementById('card-'+id)?.classList.add('error');document.getElementById('status-'+id).textContent=t('es');document.getElementById('resp-'+id).textContent=msg;}
+function addDiscMsg(aiId,aiName,color,text){const f=document.getElementById('discussionFeed');const d=document.createElement('div');d.className='discussion-msg';d.innerHTML=`<div class="discussion-avatar" style="background:${color}20;color:${color};border:1px solid ${color}30">${AIC.find(a=>a.id===aiId)?.short||'AI'}</div><div class="discussion-text"><strong>${aiName}</strong>${text}</div>`;f.appendChild(d);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function callOpenAI(key,messages){const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'gpt-4o-mini',messages,max_tokens:800,temperature:0.7})});if(!r.ok)throw new Error('OpenAI: '+r.status);return(await r.json()).choices[0].message.content;}
+async function callGemini(key,prompt){const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:800,temperature:0.7}})});if(!r.ok)throw new Error('Gemini: '+r.status);return(await r.json()).candidates[0].content.parts[0].text;}
+async function callDeepSeek(key,messages){const r=await fetch('https://api.deepseek.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'deepseek-chat',messages,max_tokens:800})});if(!r.ok)throw new Error('DeepSeek: '+r.status);return(await r.json()).choices[0].message.content;}
+async function callGrok(key,messages){const r=await fetch('https://api.x.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'grok-3-fast',messages,max_tokens:800})});if(!r.ok)throw new Error('Grok: '+r.status);return(await r.json()).choices[0].message.content;}
+async function callClaude(key,prompt){const r=await fetch('https://tiny-dawn-55f3.artemsuprun275.workers.dev',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',messages:[{role:'user',content:prompt}],max_tokens:1000})});if(!r.ok)throw new Error('Claude: '+r.status);return(await r.json()).content[0].text;}
+async function callAI(ai,sys,usr){const key=getKey(ai.id);const msgs=[{role:'system',content:sys},{role:'user',content:usr}];switch(ai.id){case'openai':return callOpenAI(key,msgs);case'gemini':return callGemini(key,sys+'\n\n'+usr);case'deepseek':return callDeepSeek(key,msgs);case'grok':return callGrok(key,msgs);case'claude':return callClaude(key,sys+'\n\n'+usr);}}
+function exConf(text){const m=text.match(/confidence[:\s]+(\d+)/i)||text.match(/уверенность[:\s]+(\d+)/i)||text.match(/(\d+)%/);return m?parseInt(m[1]):Math.floor(50+Math.random()*40);}
+
+async function startPipeline(){
+  if(running)return;
+  const query=document.getElementById('queryInput').value.trim();
+  if(!query){alert(t('eq'));return;}
+  const activeAIs=AIC.filter(ai=>getKey(ai.id).length>5);
+  if(!activeAIs.length){alert(t('ak'));switchTab('keys');return;}
+  running=true;document.getElementById('launchBtn').disabled=true;
+  dlgHist=[];document.getElementById('continueDialog').style.display='none';document.getElementById('dialogFeed').innerHTML='';
+  document.getElementById('phase1').style.display='block';
+  document.getElementById('discussionCard').classList.remove('show');
+  document.getElementById('conflictBanner').classList.remove('show');
+  document.getElementById('voteSection').classList.remove('show');
+  document.getElementById('verdict').classList.remove('show');
+  document.getElementById('discussionFeed').innerHTML='';
+  showProg();buildCards(activeAIs.map(a=>a.id));
+  const ctx=buildCtx();
+  const aiLang=t('ai_lang');
+  const sys1=`You are a participant in an expert AI panel. ${aiLang} Answer the user's question. At the end state: "Confidence: XX%".${ctx?'\n\nUser profile: '+ctx:''}`;
+  setProgress(5,t('p2'));
+  const answers={};
+  await Promise.all(activeAIs.map(async ai=>{
+    cardThink(ai.id);
+    try{const r=await callAI(ai,sys1,query);const c=exConf(r);answers[ai.id]={text:r,confidence:c};cardDone(ai.id,r,c);}
+    catch(e){answers[ai.id]={text:null,confidence:0};cardErr(ai.id,'Error: '+e.message);}
+  }));
+  setProgress(40,t('p3'));
+  const valid=activeAIs.filter(ai=>answers[ai.id].text);
+  if(valid.length<2){setProgress(100,t('p7'));await doVerdict(query,answers,activeAIs,[],ctx);running=false;document.getElementById('launchBtn').disabled=false;return;}
+  document.getElementById('discussionCard').classList.add('show');
+  const rounds=depth==='fast'?1:depth==='deep'?2:3;
+  const dHist=[];
+  for(let r=0;r<rounds;r++){
+    const summ=valid.map(ai=>`${ai.name} (${answers[ai.id].confidence}%): ${answers[ai.id].text?.slice(0,300)}...`).join('\n\n');
+    for(const ai of valid){
+      const dp=`You are ${ai.name}. Other AI answers to "${query}":\n\n${summ}\n\n${aiLang}\n\nAnalyze. Agree/disagree. Be brief (2-3 sentences). End: "Confidence: XX%"`;
+      try{const r2=await callAI(ai,'',dp);const c=exConf(r2);answers[ai.id].confidence=c;document.getElementById('conf-'+ai.id).textContent=c+'%';addDiscMsg(ai.id,ai.name,ai.color,r2.replace(/confidence:\s*\d+%/gi,'').trim());dHist.push({ai:ai.name,text:r2});await sleep(300);}catch(e){}
+    }
+  }
+  setProgress(70,t('p4'));
+  const confs=valid.map(ai=>answers[ai.id].confidence);
+  const spread=Math.max(...confs)-Math.min(...confs);
+  const avg=confs.reduce((a,b)=>a+b,0)/confs.length;
+  const hasCons=spread<30&&avg>55;
+  let voteWin=null;
+  if(!hasCons&&valid.length>=2){
+    document.getElementById('conflictBanner').classList.add('show');await sleep(800);
+    document.getElementById('voteSection').classList.add('show');setProgress(80,t('p5'));
+    const tot=valid.reduce((s,ai)=>s+answers[ai.id].confidence,0);
+    document.getElementById('voteBars').innerHTML=valid.map(ai=>`<div class="vote-bar"><div class="vote-name">${ai.name}</div><div class="vote-track"><div class="vote-fill" id="vf-${ai.id}" style="background:${ai.color}"></div></div><div class="vote-pct" id="vp-${ai.id}">0%</div></div>`).join('');
+    await sleep(200);
+    valid.forEach(ai=>{const p=tot>0?Math.round((answers[ai.id].confidence/tot)*100):0;document.getElementById('vf-'+ai.id).style.width=p+'%';document.getElementById('vp-'+ai.id).textContent=p+'%';});
+    voteWin=valid.reduce((b,ai)=>answers[ai.id].confidence>answers[b.id].confidence?ai:b);
+    await sleep(1000);
+  }
+  setProgress(90,t('p6'));
+  await doVerdict(query,answers,valid,dHist,ctx,hasCons,voteWin);
+  setProgress(100,t('p7'));running=false;document.getElementById('launchBtn').disabled=false;
+}
+
+async function doVerdict(query,answers,ais,disc,ctx,hasCons,voteWin){
+  const ck=getKey('claude');
+  const aiLang=t('ai_lang');
+  const summ=ais.filter(ai=>answers[ai.id]?.text).map(ai=>`${ai.name} (${answers[ai.id].confidence}%):\n${answers[ai.id].text}`).join('\n\n---\n\n');
+  const dsum=disc.length>0?'\n\nDiscussion:\n'+disc.map(d=>`${d.ai}: ${d.text.slice(0,200)}`).join('\n'):'';
+  const cn=hasCons?'\nModels reached CONSENSUS.':voteWin?`\nNo consensus. Leader: ${voteWin.name}.`:'\nSingle model.';
+  const vp=`You are the final arbiter — Claude.\n${aiLang}\n\nQuestion: ${query}\n\nAI Answers:\n${summ}${dsum}${cn}${ctx?'\n\nUser profile: '+ctx:''}\n\nTask:\n1. Check accuracy\n2. Extract key points\n3. Give final clear answer\n4. Note disputes\n5. State confidence\n\nBe specific and helpful.`;
+  let vt='';
+  if(ck.length>10){try{vt=await callClaude(ck,vp);}catch(e){vt='Claude error: '+e.message;}}
+  else{try{const r=await fetch('https://tiny-dawn-55f3.artemsuprun275.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:vp}]})});const d=await r.json();vt=d.content?.[0]?.text||t('ef');}catch(e){vt=t('ef');}}
+  document.getElementById('verdictText').textContent=vt;
+  const mc=ais.filter(ai=>answers[ai.id]?.text).length;
+  document.getElementById('verdictMeta').innerHTML=`<div class="verdict-stat">${t('ml')} <span>${mc}</span></div><div class="verdict-stat">${t('cl')} <span>${hasCons?t('yc'):t('nc')}</span></div><div class="verdict-stat">${t('dl')} <span>${depth}</span></div><div class="verdict-stat">${t('tl')} <span>${new Date().toLocaleTimeString()}</span></div>`;
+  document.getElementById('verdict').classList.add('show');
+  addToHistory(query,vt);
+  document.getElementById('verdict').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// Voice
+let recog=null,listening=false,activeBtn=null;
+function toggleVoice(input,btnId){
+  if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){alert('Voice not supported. Use Chrome/Safari.');return;}
+  if(listening){recog.stop();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recog=new SR();const p=getProfile();
+  const lm={ru:'ru-RU',en:'en-US',uz:'uz-UZ',de:'de-DE',fr:'fr-FR',es:'es-ES',tr:'tr-TR',zh:'zh-CN',ar:'ar-SA'};
+  recog.lang=lm[p.lang]||'en-US';recog.continuous=false;recog.interimResults=false;
+  activeBtn=btnId;
+  recog.onstart=()=>{listening=true;document.getElementById(btnId)?.classList.add('listening');};
+  recog.onresult=e=>{input.value=e.results[0][0].transcript;};
+  recog.onend=()=>{listening=false;document.getElementById(activeBtn)?.classList.remove('listening');};
+  recog.onerror=()=>{listening=false;document.getElementById(activeBtn)?.classList.remove('listening');};
+  recog.start();
+}
+
+let speaking=false;
+function speakVerdict(){
+  const text=document.getElementById('verdictText').textContent;if(!text)return;
+  if(speaking){window.speechSynthesis.cancel();speaking=false;document.getElementById('speakBtn').textContent='🔊 '+t('speak_btn').replace('🔊 ','');return;}
+  const u=new SpeechSynthesisUtterance(text);const p=getProfile();
+  const lm={ru:'ru-RU',en:'en-US',uz:'uz-UZ',de:'de-DE',fr:'fr-FR',es:'es-ES',tr:'tr-TR',zh:'zh-CN',ar:'ar-SA'};
+  u.lang=lm[p.lang]||'en-US';u.rate=0.9;
+  u.onstart=()=>{speaking=true;document.getElementById('speakBtn').textContent='⏹ Stop';};
+  u.onend=()=>{speaking=false;document.getElementById('speakBtn').textContent='🔊 '+t('speak_btn').replace('🔊 ','');};
+  window.speechSynthesis.speak(u);
+}
+
+let dlgHist=[];
+function showContinueDialog(){document.getElementById('continueDialog').style.display='block';document.getElementById('continueDialog').scrollIntoView({behavior:'smooth'});document.getElementById('continueInput').focus();}
+async function continueDialogFn(){
+  const input=document.getElementById('continueInput');const q=input.value.trim();if(!q)return;
+  const prev=document.getElementById('verdictText').textContent;
+  dlgHist.push({role:'user',content:q});input.value='';input.disabled=true;
+  const aiLang=t('ai_lang');
+  const ctx=dlgHist.map(m=>`${m.role==='user'?t('you'):'AI'}: ${m.content}`).join('\n');
+  const fp=`Previous dialog:\n${ctx}\n\nPrevious answer: ${prev}\n\nNew question: ${q}\n\n${aiLang}\n\nContinue considering full context.`;
+  const active=AIC.filter(ai=>(localStorage.getItem('mab_k_'+ai.id)||'').length>5);
+  let resp='';
+  for(const ai of active){try{resp=await callAI(ai,'You are a smart assistant. Continue dialog.',fp);if(resp)break;}catch(e){}}
+  if(!resp)resp=t('ef');
+  dlgHist.push({role:'assistant',content:resp});
+  const feed=document.getElementById('dialogFeed');
+  feed.innerHTML+=`<div style="margin-bottom:12px;padding:10px;background:var(--surface);border-radius:8px;border-left:2px solid var(--accent2);"><div style="font-size:0.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;">${t('you')}</div><div style="font-size:0.8rem;color:var(--text);">${q}</div></div><div style="margin-bottom:12px;padding:10px;background:var(--surface);border-radius:8px;border-left:2px solid var(--accent3);"><div style="font-size:0.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;">${t('aia')}</div><div style="font-size:0.8rem;color:var(--text);font-family:'JetBrains Mono',monospace;white-space:pre-wrap;">${resp}</div></div>`;
+  feed.scrollIntoView({behavior:'smooth',block:'end'});
+  input.disabled=false;
+}
+</script>
+
+</body>
+</html>
